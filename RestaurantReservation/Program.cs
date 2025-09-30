@@ -7,6 +7,8 @@ using RestaurantReservation.Db.Models;
 using RestaurantReservation.Db.Services;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using RestaurantReservation.Db.Repositories;
 using System.Threading.Tasks;
 
 namespace RestaurantReservation
@@ -14,47 +16,103 @@ namespace RestaurantReservation
     class Program
     {
         static async Task Main(string[] args)
+{
+    var host = CreateHostBuilder(args).Build();
+
+    using var scope = host.Services.CreateScope();
+    var services = scope.ServiceProvider;
+
+    var dbContext = services.GetRequiredService<RestaurantReservationDbContext>();
+    dbContext.Database.EnsureCreated();
+
+    bool running = true;
+
+    while (running)
+    {
+        Console.WriteLine("\n=== Restaurant Reservation Demo Menu ===");
+        Console.WriteLine("1 - Service CRUD Demo");
+        Console.WriteLine("2 - Get Methods Demo");
+        Console.WriteLine("3 - Db Function Demo");
+        Console.WriteLine("4 - Stored Procedure Demo");
+        Console.WriteLine("5 - Repository Demo");
+        Console.WriteLine("0 - Exit");
+        Console.Write("Your Choice is: ");
+
+        var choice = Console.ReadLine();
+
+        switch (choice)
         {
-            var host = CreateHostBuilder(args).Build();
+            case "1":
+                var crudService = services.GetRequiredService<RestaurantReservationService>();
+                await Demo(crudService);
+                break;
 
-
-            using (var scope = host.Services.CreateScope())
-            {
-                var services = scope.ServiceProvider;
-
-                var dbContext = services.GetRequiredService<RestaurantReservationDbContext>();
-                dbContext.Database.EnsureCreated();
-
-                var service = services.GetRequiredService<RestaurantReservationService>();
-                await Demo(service);
-
+            case "2":
                 var getService = services.GetRequiredService<RestaurantReservationServiceGet>();
                 await Demo(getService);
+                break;
 
-                var dbFunctionService = services.GetRequiredService<RestaurantReservationDbFunctionsService>();
-                await DemoDbFunction(dbFunctionService);
+            case "3":
+                var funcService = services.GetRequiredService<RestaurantReservationDbFunctionsService>();
+                await DemoDbFunction(funcService);
+                break;
 
+            case "4":
                 var spService = services.GetRequiredService<RestaurantReservationDbStoredProcedureService>();
                 await DemoStoredProcedure(spService);
-            }
+                break;
+
+            case "5":
+                var repoService = services.GetRequiredService<RestaurantReservationRepositoriesService>();
+                await DemoRepositoryMethods(repoService);                break;
+
+            case "0":
+                Console.WriteLine("Exiting...");
+                running = false;
+                break;
+
+            default:
+                Console.WriteLine("Not a valid choice. Please try again.");
+                break;
         }
+
+        if (running)
+        {
+            Console.WriteLine("\nPress any key to return to the menu...");
+            Console.ReadKey();
+            Console.Clear();
+        }
+    }
+}
+
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
-        .ConfigureAppConfiguration((context, config) =>
-        {
-            config.SetBasePath(Directory.GetCurrentDirectory());
-            config.AddJsonFile("RestaurantReservation/appsettings.json", optional: false, reloadOnChange: true);
-        })
-        .ConfigureServices((hostContext, services) =>
-        {
-            var connectionString = hostContext.Configuration.GetConnectionString("DefaultConnection");
+                .ConfigureAppConfiguration((context, config) =>
+                {
+                    config.SetBasePath(Directory.GetCurrentDirectory());
+                    config.AddJsonFile("RestaurantReservation/appsettings.json", optional: false, reloadOnChange: true);
+                })
+                .ConfigureServices((hostContext, services) =>
+                {
+                    var connectionString = hostContext.Configuration.GetConnectionString("DefaultConnection");
 
-            services.AddDbContext<RestaurantReservationDbContext>(options =>
-                options.UseSqlServer(connectionString));
+                    services.AddDbContext<RestaurantReservationDbContext>(options =>
+                        options.UseSqlServer(connectionString));
 
-            services.AddScoped<RestaurantReservationService>();
-        });
+                    services.AddScoped<RestaurantReservationService>();
+                    services.AddScoped<RestaurantReservationServiceGet>();
+                    services.AddScoped<RestaurantReservationDbFunctionsService>();
+                    services.AddScoped<RestaurantReservationDbStoredProcedureService>();
+                    services.AddScoped<RestaurantReservationRepositoriesService>();
+                    services.AddScoped<EmployeeRepository>();
+                    services.AddScoped<CustomerRepository>();
+                    services.AddScoped<RestaurantRepository>();
+                    services.AddScoped<ReservationRepository>();    
+                    services.AddScoped<OrderRepository>();
+                    services.AddScoped<MenuItemRepository>();
+                });
 
+        // === DEMO: Create/Seed Data ===
         public static async Task Demo(RestaurantReservationService service)
         {
             Console.WriteLine("Seeding and testing data...");
@@ -139,6 +197,7 @@ namespace RestaurantReservation
             }
         }
 
+        // === DEMO: Get Methods ===
         public static async Task Demo(RestaurantReservationServiceGet service)
         {
             Console.WriteLine("Testing Get methods...");
@@ -173,6 +232,7 @@ namespace RestaurantReservation
             }
         }
 
+        // === DEMO: Function ===
         public static async Task DemoDbFunction(RestaurantReservationDbFunctionsService service)
         {
             Console.WriteLine("Testing CalculateTotalRevenue function...");
@@ -181,6 +241,7 @@ namespace RestaurantReservation
             Console.WriteLine($"Total revenue for Restaurant {restaurantId}: {totalRevenue}");
         }
 
+        // === DEMO: Stored Procedure ===
         public static async Task DemoStoredProcedure(RestaurantReservationDbStoredProcedureService service)
         {
             Console.WriteLine("Testing GetCustomersByPartySize stored procedure...");
@@ -194,5 +255,55 @@ namespace RestaurantReservation
                 Console.WriteLine($"{customer.FirstName} {customer.LastName} ({customer.Email})");
             }
         }
+
+        // === DEMO: Repository Methods ===
+        public static async Task DemoRepositoryMethods(RestaurantReservationRepositoriesService service)
+        {
+            Console.WriteLine("=== Testing Repository & Service Methods ===\n");
+
+            var managers = await service.ListManagersAsync();
+            Console.WriteLine($"Managers: {managers.Count}");
+            foreach (var m in managers)
+            {
+                Console.WriteLine($"Manager: {m.FirstName} {m.LastName}");
+            }
+
+            var avgOrderAmount = await service.CalculateAverageOrderAmountAsync(1);
+            Console.WriteLine($"\nAverage Order Amount for Employee 1: {avgOrderAmount}");
+
+            var employeesWithRestaurants = await service.GetEmployeesWithRestaurantAsync();
+            Console.WriteLine("\nEmployees with Restaurant Info:");
+            foreach (var e in employeesWithRestaurants)
+            {
+                Console.WriteLine($"{e.FirstName} {e.LastName} ({e.Position}) works at {e.RestaurantName}");
+            }
+
+            var customers = await service.GetCustomersByPartySizeAsync(4);
+            Console.WriteLine($"\nCustomers with Party Size 4: {customers.Count}");
+            foreach (var c in customers)
+            {
+                Console.WriteLine($"Customer: {c.FirstName} {c.LastName}");
+            }
+
+            var reservationsDetails = await service.GetReservationsWithDetailsAsync();
+            Console.WriteLine("\nReservations with Details:");
+            foreach (var r in reservationsDetails)
+            {
+                Console.WriteLine($"Reservation {r.ReservationId} for {r.CustomerFirstName} {r.CustomerLastName} at {r.RestaurantName}");
+            }
+
+            var menuItems = await service.ListOrderedMenuItemsAsync(1);
+            Console.WriteLine($"\nMenu Items for Reservation 1: {menuItems.Count}");
+            foreach (var item in menuItems)
+            {
+                Console.WriteLine($"- {item.Name} ({item.Price:C})");
+            }
+
+            var revenue = await service.CalculateTotalRevenueAsync(1);
+            Console.WriteLine($"\nTotal Revenue for Restaurant 1: {revenue:C}");
+
+            Console.WriteLine("\n=== Demo Completed ===");
+        }
     }
 }
+

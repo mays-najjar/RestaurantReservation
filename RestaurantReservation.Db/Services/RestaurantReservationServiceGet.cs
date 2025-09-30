@@ -9,6 +9,10 @@ namespace RestaurantReservation.Db.Services
     public class RestaurantReservationServiceGet
     {
         private readonly RestaurantReservationDbContext _context;
+          public RestaurantReservationServiceGet(RestaurantReservationDbContext context)
+    {
+        _context = context;
+    }
         public async Task<List<Employee>> ListManagersAsync()
         {
             return await _context.Employees
@@ -55,7 +59,7 @@ namespace RestaurantReservation.Db.Services
 
         public async Task<List<ReservationWithDetails>> GetReservationsWithDetailsAsync()
         {
-            return await _context.ReservationDetails.ToListAsync();
+            return await _context.ReservationWithDetails.ToListAsync();
         }
         public async Task<List<EmployeeWithRestaurant>> GetEmployeesWithRestaurantAsync()
         {
