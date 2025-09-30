@@ -17,25 +17,33 @@ namespace RestaurantReservation
         {
             var host = CreateHostBuilder(args).Build();
 
+
             using (var scope = host.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
+
                 var dbContext = services.GetRequiredService<RestaurantReservationDbContext>();
                 dbContext.Database.EnsureCreated();
 
-                var service = new RestaurantReservationService(dbContext);
+                var service = services.GetRequiredService<RestaurantReservationService>();
                 await Demo(service);
+
+                var getService = services.GetRequiredService<RestaurantReservationServiceGet>();
+                await Demo(getService);
+
+                var dbFunctionService = services.GetRequiredService<RestaurantReservationDbFunctionsService>();
+                await DemoDbFunction(dbFunctionService);
+
+                var spService = services.GetRequiredService<RestaurantReservationDbStoredProcedureService>();
+                await DemoStoredProcedure(spService);
             }
-
-            Console.WriteLine("Demo finished!");
         }
-
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
         .ConfigureAppConfiguration((context, config) =>
         {
             config.SetBasePath(Directory.GetCurrentDirectory());
-            config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+            config.AddJsonFile("RestaurantReservation/appsettings.json", optional: false, reloadOnChange: true);
         })
         .ConfigureServices((hostContext, services) =>
         {
@@ -46,7 +54,6 @@ namespace RestaurantReservation
 
             services.AddScoped<RestaurantReservationService>();
         });
-
 
         public static async Task Demo(RestaurantReservationService service)
         {
@@ -165,12 +172,27 @@ namespace RestaurantReservation
                 Console.WriteLine($"{e.FirstName} {e.LastName} ({e.Position}) works at {e.RestaurantName}");
             }
         }
+
         public static async Task DemoDbFunction(RestaurantReservationDbFunctionsService service)
         {
             Console.WriteLine("Testing CalculateTotalRevenue function...");
             int restaurantId = 1;
             var totalRevenue = await service.GetTotalRevenueAsync(restaurantId);
             Console.WriteLine($"Total revenue for Restaurant {restaurantId}: {totalRevenue}");
+        }
+
+        public static async Task DemoStoredProcedure(RestaurantReservationDbStoredProcedureService service)
+        {
+            Console.WriteLine("Testing GetCustomersByPartySize stored procedure...");
+
+            int minPartySize = 4;
+            var customers = await service.GetCustomersByPartySizeAsync(minPartySize);
+
+            Console.WriteLine($"Customers with party size greater than {minPartySize}:");
+            foreach (var customer in customers)
+            {
+                Console.WriteLine($"{customer.FirstName} {customer.LastName} ({customer.Email})");
+            }
         }
     }
 }

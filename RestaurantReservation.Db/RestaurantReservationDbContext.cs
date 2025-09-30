@@ -142,7 +142,7 @@ namespace RestaurantReservation.Db
             modelBuilder.HasDbFunction(
             typeof(RestaurantDbFunctions)
             .GetMethod(nameof(RestaurantDbFunctions.CalculateTotalRevenue))
-    );
+            );
         }
     }
 }
