@@ -150,6 +150,20 @@ namespace RestaurantReservation
 
             var avgOrderAmount = await service.CalculateAverageOrderAmountAsync(1);
             Console.WriteLine($"Average Order Amount for Employee 1: {avgOrderAmount}");
+
+            var reservationsDetails = await service.GetReservationsWithDetailsAsync();
+            Console.WriteLine("Reservations with Details:");
+            foreach (var r in reservationsDetails)
+            {
+                Console.WriteLine($"Reservation {r.ReservationId} for {r.CustomerFirstName} {r.CustomerLastName} at {r.RestaurantName}");
+            }
+
+            var employeesWithRestaurants = await service.GetEmployeesWithRestaurantAsync();
+            Console.WriteLine("\nEmployees with Restaurant Info:");
+            foreach (var e in employeesWithRestaurants)
+            {
+                Console.WriteLine($"{e.FirstName} {e.LastName} ({e.Position}) works at {e.RestaurantName}");
+            }
         }
     }
 }

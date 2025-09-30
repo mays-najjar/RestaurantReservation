@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace RestaurantReservation.Db.Services
 {
-    public class RestaurantReservationServiceGet 
+    public class RestaurantReservationServiceGet
     {
-         private readonly RestaurantReservationDbContext _context;
+        private readonly RestaurantReservationDbContext _context;
         public async Task<List<Employee>> ListManagersAsync()
         {
             return await _context.Employees
@@ -26,7 +26,7 @@ namespace RestaurantReservation.Db.Services
         public async Task<List<Order>> ListOrdersAndMenuItemsAsync(int reservationId)
         {
             return await _context.Orders
-                .Include(o => o.OrderItems)    
+                .Include(o => o.OrderItems)
                     .ThenInclude(oi => oi.MenuItem)
                 .Where(o => o.ReservationId == reservationId)
                 .ToListAsync();
@@ -37,7 +37,7 @@ namespace RestaurantReservation.Db.Services
             return await _context.OrderItems
                 .Where(oi => oi.Order.ReservationId == reservationId)
                 .Select(oi => oi.MenuItem)
-                .Distinct() 
+                .Distinct()
                 .ToListAsync();
         }
 
@@ -49,8 +49,18 @@ namespace RestaurantReservation.Db.Services
 
             if (!orders.Any())
                 return 0m;
-                
-            return orders.Average(o => o.TotalAmount); 
+
+            return orders.Average(o => o.TotalAmount);
+        }
+
+        public async Task<List<ReservationWithDetails>> GetReservationsWithDetailsAsync()
+        {
+            return await _context.ReservationDetails.ToListAsync();
+        }
+        public async Task<List<EmployeeWithRestaurant>> GetEmployeesWithRestaurantAsync()
+        {
+            return await _context.EmployeesWithRestaurant.ToListAsync();
+
         }
     }
 }
