@@ -131,5 +131,25 @@ namespace RestaurantReservation
                 });
             }
         }
+
+        public static async Task Demo(RestaurantReservationServiceGet service)
+        {
+            Console.WriteLine("Testing Get methods...");
+
+            var managers = await service.ListManagersAsync();
+            Console.WriteLine($"Managers: {managers.Count}");
+
+            var reservations = await service.GetReservationsByCustomerAsync(1);
+            Console.WriteLine($"Reservations for Customer 1: {reservations.Count}");
+
+            var orders = await service.ListOrdersAndMenuItemsAsync(1);
+            Console.WriteLine($"Orders for Reservation 1: {orders.Count}");
+
+            var menuItems = await service.ListOrderedMenuItemsAsync(1);
+            Console.WriteLine($"Menu Items for Reservation 1: {menuItems.Count}");
+
+            var avgOrderAmount = await service.CalculateAverageOrderAmountAsync(1);
+            Console.WriteLine($"Average Order Amount for Employee 1: {avgOrderAmount}");
+        }
     }
 }
