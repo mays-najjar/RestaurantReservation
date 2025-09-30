@@ -165,5 +165,12 @@ namespace RestaurantReservation
                 Console.WriteLine($"{e.FirstName} {e.LastName} ({e.Position}) works at {e.RestaurantName}");
             }
         }
+        public static async Task DemoDbFunction(RestaurantReservationDbFunctionsService service)
+        {
+            Console.WriteLine("Testing CalculateTotalRevenue function...");
+            int restaurantId = 1;
+            var totalRevenue = await service.GetTotalRevenueAsync(restaurantId);
+            Console.WriteLine($"Total revenue for Restaurant {restaurantId}: {totalRevenue}");
+        }
     }
 }

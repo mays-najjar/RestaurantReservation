@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using RestaurantReservation.Db.DbFunctions;
 using RestaurantReservation.Db.Models;
 
 namespace RestaurantReservation.Db
@@ -137,6 +138,11 @@ namespace RestaurantReservation.Db
             modelBuilder.Entity<EmployeeWithRestaurant>()
             .ToView("vw_EmployeesWithRestaurant")
             .HasNoKey();
-        } 
+
+            modelBuilder.HasDbFunction(
+            typeof(RestaurantDbFunctions)
+            .GetMethod(nameof(RestaurantDbFunctions.CalculateTotalRevenue))
+    );
+        }
     }
 }
